@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { CartProvider } from "@/components/CartContext";
+import CartDrawer from "@/components/CartDrawer";
 import "./globals.css";
 
 const cormorant = Cormorant_Garamond({
@@ -77,9 +79,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${cormorant.variable} ${manrope.variable} h-full scroll-smooth antialiased`}
     >
       <body className="min-h-full flex flex-col bg-kaia-ivory text-kaia-ink font-sans selection:bg-kaia-burgundy selection:text-kaia-ivory">
-        <Navbar />
-        <div className="flex-1">{children}</div>
-        <Footer />
+        <CartProvider>
+          <Navbar />
+          <div className="flex-1">{children}</div>
+          <Footer />
+          <CartDrawer />
+        </CartProvider>
       </body>
     </html>
   );

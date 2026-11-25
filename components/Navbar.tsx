@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useCart } from "./CartContext";
 
 const LEFT_LINKS = [
   { label: "New Arrivals", href: "/collections/new-arrivals" },
@@ -27,9 +28,12 @@ const ALL_MOBILE_LINKS = [
 export default function Navbar() {
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const { cart, openCart } = useCart();
 
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const totalItems = cart?.totalQuantity || 0;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 36);
@@ -197,9 +201,10 @@ export default function Navbar() {
 
           <button
             type="button"
+            onClick={openCart}
             title="Shopping Bag"
-            aria-label="Shopping Bag"
-            className={`group inline-flex items-center gap-2.5 rounded-full border px-4 py-1.5 text-[10px] font-semibold tracking-[0.22em] uppercase transition-all duration-300 ${
+            aria-label={`Shopping Bag with ${totalItems} items`}
+            className={`group inline-flex cursor-pointer items-center gap-2.5 rounded-full border px-4 py-1.5 text-[10px] font-semibold tracking-[0.22em] uppercase transition-all duration-300 ${
               isSolid
                 ? "border-kaia-burgundy bg-kaia-burgundy text-kaia-ivory hover:bg-kaia-burgundy-dark"
                 : "border-kaia-linen/45 bg-[#240E0E]/45 text-kaia-ivory backdrop-blur-md hover:border-kaia-gold hover:bg-kaia-burgundy"
@@ -213,7 +218,7 @@ export default function Navbar() {
                   : "bg-kaia-gold text-kaia-ink"
               }`}
             >
-              0
+              {totalItems}
             </span>
           </button>
         </div>

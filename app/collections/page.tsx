@@ -49,7 +49,7 @@ export default async function CollectionsIndexPage() {
       key: "abaya-collection",
       title: "Abaya Collection",
       subtitle: "Signature Silhouettes",
-      href: "/collections/all",
+      href: "/collections/abaya-collection",
       imageUrl: primaryImage,
       imageAlt:
         allCollection?.image?.altText?.trim() ||

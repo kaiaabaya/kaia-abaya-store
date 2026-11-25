@@ -4,12 +4,15 @@ import { useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { ShopifyProductDetail } from "@/lib/shopify";
+import { useCart } from "./CartContext";
 
 export default function ProductDetailClient({
   product,
 }: {
   product: ShopifyProductDetail;
 }) {
+  const { addItem, buyNow, isLoading } = useCart();
+
   const gallery = useMemo(() => {
     if (product.images.length > 0) return product.images;
     return product.featuredImage ? [product.featuredImage] : [];
@@ -35,6 +38,7 @@ export default function ProductDetailClient({
 
   const [customLengthNote, setCustomLengthNote] = useState("");
   const [addedFeedback, setAddedFeedback] = useState(false);
+  const [actionType, setActionType] = useState<"bag" | "buy" | null>(null);
 
   const activeVariant = useMemo(() => {
     if (product.variants.length === 0) return null;
@@ -78,10 +82,32 @@ export default function ProductDetailClient({
     }
   };
 
-  const handleAddToBag = () => {
-    if (!isAvailable) return;
-    setAddedFeedback(true);
-    setTimeout(() => setAddedFeedback(false), 2400);
+  const buildLineAttributes = () => {
+    const trimmed = customLengthNote.trim();
+    if (!trimmed) return undefined;
+    return [{ key: "Custom Length / Atelier Note", value: trimmed }];
+  };
+
+  const handleAddToBag = async () => {
+    if (!isAvailable || !activeVariant?.id || isLoading) return;
+    setActionType("bag");
+    try {
+      await addItem(activeVariant.id, 1, buildLineAttributes());
+      setAddedFeedback(true);
+      setTimeout(() => setAddedFeedback(false), 2400);
+    } finally {
+      setActionType(null);
+    }
+  };
+
+  const handleBuyItNow = async () => {
+    if (!isAvailable || !activeVariant?.id || isLoading) return;
+    setActionType("buy");
+    try {
+      await buyNow(activeVariant.id, 1, buildLineAttributes());
+    } finally {
+      setActionType(null);
+    }
   };
 
   const activeImage = gallery[selectedImageIndex] || gallery[0] || null;
@@ -208,7 +234,7 @@ export default function ProductDetailClient({
                         type="button"
                         onClick={() => handleSelectOption(option.name, value)}
                         aria-pressed={isSelected}
-                        className={`min-w-12 border px-4 py-2.5 text-xs font-medium tracking-[0.14em] transition-all ${
+                        className={`min-w-12 cursor-pointer border px-4 py-2.5 text-xs font-medium tracking-[0.14em] transition-all ${
                           isSelected
                             ? "border-kaia-burgundy bg-kaia-burgundy text-kaia-ivory"
                             : "border-kaia-burgundy/25 bg-transparent text-kaia-ink hover:border-kaia-burgundy"
@@ -242,15 +268,15 @@ export default function ProductDetailClient({
           />
         </div>
 
-        {/* Primary Add to Bag CTA */}
+        {/* Primary Add to Bag & Buy It Now CTAs */}
         <div className="mt-8 space-y-3">
           <button
             type="button"
-            disabled={!isAvailable}
+            disabled={!isAvailable || isLoading}
             onClick={handleAddToBag}
-            className={`h-13 w-full text-[11px] font-semibold tracking-[0.24em] uppercase transition-all ${
+            className={`h-13 w-full cursor-pointer text-[11px] font-semibold tracking-[0.24em] uppercase transition-all disabled:cursor-not-allowed disabled:opacity-60 ${
               !isAvailable
-                ? "cursor-not-allowed bg-kaia-taupe/40 text-kaia-ivory"
+                ? "bg-kaia-taupe/40 text-kaia-ivory"
                 : addedFeedback
                 ? "bg-kaia-burgundy-dark text-kaia-gold"
                 : "bg-kaia-burgundy text-kaia-ivory hover:bg-kaia-burgundy-dark"
@@ -258,12 +284,27 @@ export default function ProductDetailClient({
           >
             {!isAvailable
               ? "Sold Out"
+              : isLoading && actionType === "bag"
+              ? "Adding to Bag..."
               : addedFeedback
               ? "Added to Your Bag ✓"
               : `Add to Bag · ${formattedPrice} ${displayPrice.currencyCode}`}
           </button>
 
-          <p className="text-center text-[11px] text-kaia-taupe">
+          {isAvailable && (
+            <button
+              type="button"
+              disabled={isLoading}
+              onClick={handleBuyItNow}
+              className="h-13 w-full cursor-pointer border border-kaia-burgundy bg-transparent text-[11px] font-semibold tracking-[0.24em] text-kaia-burgundy uppercase transition-all hover:bg-kaia-burgundy hover:text-kaia-ivory disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {isLoading && actionType === "buy"
+                ? "Preparing Checkout..."
+                : "Buy It Now"}
+            </button>
+          )}
+
+          <p className="pt-1 text-center text-[11px] text-kaia-taupe">
             Made to order with French-seam finishing · Gulf &amp; Worldwide
             express shipping
           </p>
